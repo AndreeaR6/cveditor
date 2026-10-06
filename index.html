@@ -1010,8 +1010,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
 
   function fileName(ext) {
-    var nm = (model.name || 'CV').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_');
-    return 'CV_' + nm + '.' + ext;
+    var nm = (model.name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    return (nm ? 'CV_' + nm : 'CV') + '.' + ext;
   }
   /* Viewerul blocheaza descarcarile directe: fisierul se ofera prin capabilitatea "downloads" (cere confirmare). Fara ea, ramane descarcarea clasica. */
   function offerFile(name, data, fallback) {

@@ -825,7 +825,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         }),
         domains: lines(m.domains), interests: str(m.hobbies), languages: lines(m.languages)
       },
-      photo: m.photo || ''
+      photoUrl: m.photoUrl || '',
+      photo: m.photoUrl ? '' : (m.photo || '')
     };
   }
   function fromJson(o) {
@@ -835,10 +836,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     function arr(v, name) { if (v == null) return []; if (!Array.isArray(v)) throw new Error('"' + name + '" trebuie sa fie o lista.'); return v; }
     var b = o.basics || {}, sb = o.sidebar || {};
     if (o.photo && !/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/.test(o.photo)) throw new Error('"photo" trebuie sa fie o imagine PNG ca data:image/png;base64,...');
+    if (o.photoUrl && !/^https:\/\/[^\s"'<>]+$/.test(o.photoUrl)) throw new Error('"photoUrl" trebuie sa fie un link https://...');
     return {
       lang: o.lang === 'en' ? 'en' : 'ro',
       name: str(b.name), headline: str(b.headline), email: str(b.email), location: str(b.location), linkedin: str(b.linkedin),
-      photo: o.photo || '',
+      photo: o.photo || '', photoUrl: o.photoUrl || '',
       profile: str(o.profile),
       topSkills: arr(sb.topSkills, 'sidebar.topSkills').map(str).join('\n'),
       chipGroups: arr(sb.tagGroups, 'sidebar.tagGroups').map(function (g) {
@@ -874,7 +876,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
   /* ---------------- modele ---------------- */
   function blank() {
-    return { lang: 'ro', name: '', headline: '', email: '', location: '', linkedin: '', photo: '', profile: '', topSkills: '',
+    return { lang: 'ro', name: '', headline: '', email: '', location: '', linkedin: '', photo: '', photoUrl: '', profile: '', topSkills: '',
       chipGroups: '', domains: '', hobbies: '', languages: '', exp: [{ period: '', title: '', company: '', loc: '', bullets: '' }], projects: '',
       edu: [{ period: '', degree: '', school: '', details: '' }] };
   }
@@ -908,10 +910,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     h += '<fieldset><legend>Poza</legend>' +
       '<div class="row"><input type="file" id="photoFile" accept="image/*">' +
       '<button type="button" id="photoClear" class="ghost">Fara poza</button></div>' +
+      '<div class="row"><input type="text" id="photoUrl" placeholder="Link poza (src de pe LinkedIn / Europass)" value="' + esc(model.photoUrl || '') + '">' +
+      '<button type="button" id="photoUrlGo">Foloseste linkul</button></div>' +
       '<div class="sliders"><label>Zoom <input type="range" id="pz" min="1" max="3" step="0.05" value="1"></label>' +
       '<label>Stanga / dreapta <input type="range" id="px" min="-1" max="1" step="0.02" value="0"></label>' +
       '<label>Sus / jos <input type="range" id="py" min="-1" max="1" step="0.02" value="0"></label></div>' +
-      '<small>Se decupeaza rotund. Fara poza apar initialele.</small></fieldset>';
+      '<small>Se decupeaza rotund. Fara poza apar initialele. Cu link, JSON-ul pastreaza doar linkul (nu poza). Linkurile LinkedIn expira, iar PDF-ul se face doar daca serverul permite incarcarea (CORS); altfel incarca fisierul.</small></fieldset>';
 
     h += '<fieldset><legend>Profil</legend>' + field('Cateva randuri despre tine', 'profile', model.profile, { rows: 5, wide: true }) + '</fieldset>';
 
@@ -969,15 +973,29 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     model.photo = cv.toDataURL('image/png');
     changed();
   }
+  function loadPhotoUrl(url) {
+    if (!/^https:\/\/[^\s"'<>]+$/.test(url)) { status('Link invalid: trebuie sa inceapa cu https://', true); return; }
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function () {
+      photoImg = img; model.photoUrl = url;
+      var z = $('#pz'); if (z) { z.value = 1; $('#px').value = 0; $('#py').value = 0; }
+      try { applyPhoto(); status('Poza incarcata din link.'); }
+      catch (e) { model.photo = ''; photoImg = null; status('Serverul nu permite folosirea pozei in PDF (CORS). Incarca fisierul.', true); }
+    };
+    img.onerror = function () { status('Nu am putut incarca linkul (expirat, blocat sau gresit). Incarca fisierul.', true); };
+    img.src = url;
+  }
   function bindPhoto() {
     $('#photoFile').addEventListener('change', function (ev) {
       var f = ev.target.files[0]; if (!f) return;
       var url = URL.createObjectURL(f), img = new Image();
-      img.onload = function () { photoImg = img; $('#pz').value = 1; $('#px').value = 0; $('#py').value = 0; applyPhoto(); };
+      img.onload = function () { photoImg = img; model.photoUrl = ''; $('#photoUrl').value = ''; $('#pz').value = 1; $('#px').value = 0; $('#py').value = 0; applyPhoto(); };
       img.src = url;
     });
     ['pz', 'px', 'py'].forEach(function (id) { $('#' + id).addEventListener('input', applyPhoto); });
-    $('#photoClear').addEventListener('click', function () { model.photo = ''; photoImg = null; changed(); });
+    $('#photoClear').addEventListener('click', function () { model.photo = ''; model.photoUrl = ''; photoImg = null; $('#photoUrl').value = ''; changed(); });
+    $('#photoUrlGo').addEventListener('click', function () { loadPhotoUrl($('#photoUrl').value.trim()); });
   }
 
   /* ---------------- previzualizare + descarcare ---------------- */
@@ -1041,6 +1059,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     try { obj = JSON.parse(text); } catch (e) { status('Nu e JSON valid: ' + e.message, true); return; }
     try { m = core.fromJson(obj); } catch (e) { status(e.message, true); return; }
     model = m; photoImg = null; renderForm(); changed();
+    if (m.photoUrl && !m.photo) loadPhotoUrl(m.photoUrl);
     status('Incarcat: ' + model.exp.length + (model.exp.length === 1 ? ' post, ' : ' posturi, ') + model.edu.length + (model.edu.length === 1 ? ' studiu.' : ' studii.'));
   }
   function saveJson() {

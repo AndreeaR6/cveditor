@@ -8,6 +8,6 @@ Editor de CV intr-un singur fisier HTML, fara server. Deschizi `index.html` in b
 
 ## Format JSON (`"format": "cv-editor"`, `"version": 1`)
 
-`basics`, `profile`, `experience[]` (grupuri cu `heading` si `items` de tip `bullet` sau `text`), `projects[]`, `education[]` (cu `details`), `sidebar` (`topSkills`, `tagGroups`, `domains`, `interests`, `languages`) si `photo` (PNG data URL).
+`basics`, `profile`, `experience[]` (grupuri cu `heading` si `items` de tip `bullet` sau `text`), `projects[]`, `education[]` (cu `details`), `sidebar` (`topSkills`, `tagGroups`, `domains`, `interests`, `languages`) si poza: fie `photoUrl` (link https, ex. src de pe LinkedIn; JSON-ul ramane mic), fie `photo` (PNG data URL, doar daca nu exista `photoUrl`).
 
 Datele personale raman in JSON-ul tau, nu in repo.

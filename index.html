@@ -909,13 +909,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
     h += '<fieldset><legend>Poza</legend>' +
       '<div class="row"><input type="file" id="photoFile" accept="image/*">' +
-      '<button type="button" id="photoClear" class="ghost">Fara poza</button></div>' +
-      '<div class="row"><input type="text" id="photoUrl" placeholder="Link poza (src de pe LinkedIn / Europass)" value="' + esc(model.photoUrl || '') + '">' +
-      '<button type="button" id="photoUrlGo">Foloseste linkul</button></div>' +
+      '<button type="button" id="photoClear" class="ghost">Fara poza</button>' +
+      '<button type="button" id="photoLi" class="ghost">Preia din LinkedIn</button></div>' +
       '<div class="sliders"><label>Zoom <input type="range" id="pz" min="1" max="3" step="0.05" value="1"></label>' +
       '<label>Stanga / dreapta <input type="range" id="px" min="-1" max="1" step="0.02" value="0"></label>' +
       '<label>Sus / jos <input type="range" id="py" min="-1" max="1" step="0.02" value="0"></label></div>' +
-      '<small>Se decupeaza rotund. Fara poza apar initialele. Cu link, JSON-ul pastreaza doar linkul (nu poza). Linkurile LinkedIn expira, iar PDF-ul se face doar daca serverul permite incarcarea (CORS); altfel incarca fisierul.</small></fieldset>';
+      '<small>Se decupeaza rotund. Fara poza apar initialele. Butonul Preia din LinkedIn deschide profilul (adresa din Date de baza) si cere adresa pozei; JSON-ul pastreaza doar linkul. Linkul expira, iar poza intra in PDF doar daca LinkedIn permite (CORS); altfel incarca fisierul.</small></fieldset>';
 
     h += '<fieldset><legend>Profil</legend>' + field('Cateva randuri despre tine', 'profile', model.profile, { rows: 5, wide: true }) + '</fieldset>';
 
@@ -990,12 +989,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     $('#photoFile').addEventListener('change', function (ev) {
       var f = ev.target.files[0]; if (!f) return;
       var url = URL.createObjectURL(f), img = new Image();
-      img.onload = function () { photoImg = img; model.photoUrl = ''; $('#photoUrl').value = ''; $('#pz').value = 1; $('#px').value = 0; $('#py').value = 0; applyPhoto(); };
+      img.onload = function () { photoImg = img; model.photoUrl = ''; $('#pz').value = 1; $('#px').value = 0; $('#py').value = 0; applyPhoto(); };
       img.src = url;
     });
     ['pz', 'px', 'py'].forEach(function (id) { $('#' + id).addEventListener('input', applyPhoto); });
-    $('#photoClear').addEventListener('click', function () { model.photo = ''; model.photoUrl = ''; photoImg = null; $('#photoUrl').value = ''; changed(); });
-    $('#photoUrlGo').addEventListener('click', function () { loadPhotoUrl($('#photoUrl').value.trim()); });
+    $('#photoClear').addEventListener('click', function () { model.photo = ''; model.photoUrl = ''; photoImg = null; changed(); });
+    $('#photoLi').addEventListener('click', function () {
+      var li = String(model.linkedin || '').trim().replace(/^https?:\/\//, '');
+      if (li) window.open('https://' + li, '_blank', 'noopener');
+      var u = window.prompt('Pe pagina de LinkedIn: click dreapta pe poza > Copy image address. Lipeste adresa aici:', '');
+      if (u && u.trim()) loadPhotoUrl(u.trim());
+    });
   }
 
   /* ---------------- previzualizare + descarcare ---------------- */

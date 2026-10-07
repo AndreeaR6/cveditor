@@ -1,4 +1,4 @@
-<title>Editor CV</title><style>
+<meta name="robots" content="noindex, nofollow"><title>Editor CV</title><style>
 *{box-sizing:border-box}body{margin:0;font:14px/1.45 system-ui,Segoe UI,Arial,sans-serif;color:#222;background:#eef1f5}
 header{background:#16304f;color:#fff;padding:14px 22px}header h1{margin:0;font-size:18px}header p{margin:4px 0 0;color:#a9c7ea;font-size:13px}
 main{display:grid;grid-template-columns:minmax(380px,520px) 1fr;gap:18px;padding:18px;align-items:start}
@@ -887,7 +887,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   }
   var model;
   try { var saved = localStorage.getItem(KEY); model = saved ? JSON.parse(saved) : null; } catch (e) { model = null; }
-  if (!model || !model.exp) model = blank();
+  if (!model || !model.exp) model = preset();
 
   function persist() { try { localStorage.setItem(KEY, JSON.stringify(model)); } catch (e) { /* fara stocare locala */ } }
 
